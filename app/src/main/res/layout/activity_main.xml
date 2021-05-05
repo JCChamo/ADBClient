@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:background="@drawable/gradient"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="ADB CLIENT"
+        android:textSize="22dp"
+        android:textStyle="bold"
+        android:textColor="#000"
+        android:paddingTop="40dp"></TextView>
+
+    <EditText
+        android:id="@+id/server"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="SERVIDOR"
+        android:gravity="center"
+        android:backgroundTint="#000"
+        android:textColor="#000"
+        android:textColorHint="#000"></EditText>
+
+    <EditText
+        android:id="@+id/port"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="PUERTO"
+        android:gravity="center"
+        android:backgroundTint="#000"
+        android:textColor="#000"
+        android:textColorHint="#000"></EditText>
+
+    <Button
+        android:id="@+id/defaultValuesButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:layout_marginTop="10dp"
+        android:text="VALORES POR DEFECTO"></Button>
+
+    <ListView
+        android:layout_marginTop="10dp"
+        android:id="@+id/commandListView"
+        android:layout_width="300dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"></ListView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/connectButton"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/teal_700"
+            android:stateListAnimator="@null"
+            android:layout_marginLeft="150dp"
+            android:layout_marginTop="10dp"
+            android:textColor="#fff"
+            android:elevation="5dp"
+            android:text="CONECTAR"
+            android:visibility="invisible"></Button>
+
+        <ProgressBar
+            android:id="@+id/progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="15dp"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_above="@+id/bottom_header_relativelayout"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/sendFileButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="10dp"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:text="ENVIAR ARCHIVO"
+        android:visibility="invisible"></Button>
+
+    <Button
+        android:id="@+id/listDevicesButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="10dp"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:text="LISTAR DISPOSITIVOS"
+        android:visibility="invisible"></Button>
+
+    <Button
+        android:id="@+id/killButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="10dp"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:text="DESCONECTAR"
+        android:visibility="invisible"></Button>
+
+</LinearLayout>
