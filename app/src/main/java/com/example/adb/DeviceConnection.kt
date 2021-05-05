@@ -3,12 +3,13 @@ package com.example.adb
 import com.cgutman.adblib.AdbConnection
 import com.cgutman.adblib.AdbCrypto
 import com.cgutman.adblib.AdbStream
+import com.example.adb.MainActivity.Companion.safeClose
 import com.example.adb.interfaces.DeviceConnectionListener
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.net.Socket
 
-class DeviceConnection(var host : String, var port : Int, var listener: DeviceConnectionListener) : Closeable {
+class DeviceConnection(var listener: DeviceConnectionListener, var host : String, var port : Int) : Closeable {
 
     private val CONN_TIMEOUT = 5000
 
@@ -17,13 +18,21 @@ class DeviceConnection(var host : String, var port : Int, var listener: DeviceCo
     private var shellStream: AdbStream? = null
     private var closed = false
 
-    private fun startConnect(){
+    fun getmHost() : String {
+        return host
+    }
+
+    fun getmPort() : Int {
+        return port
+    }
+
+    fun startConnect(){
         Thread(Runnable {
 
             var connected = false
             var socket = Socket()
 
-            var crypto : AdbCrypto = listener.loadAdbCrypto(this@DeviceConnection)!!
+            var crypto = MainActivity.crypto
 
             try {
                 socket.connect(InetSocketAddress(host, port), CONN_TIMEOUT)
@@ -38,8 +47,8 @@ class DeviceConnection(var host : String, var port : Int, var listener: DeviceCo
                 listener.notifyConnectionFailed(this@DeviceConnection, e)
             } finally {
                 if (!connected){
-                    MainActivity.safeClose(shellStream)
-                    if (!MainActivity.safeClose(connection)){
+                    safeClose(shellStream)
+                    if (!safeClose(connection)){
                         try {
                             socket.close()
                         } catch (e : Exception) {
@@ -70,7 +79,7 @@ class DeviceConnection(var host : String, var port : Int, var listener: DeviceCo
                 listener.notifyStreamFailed(this@DeviceConnection, e)
             } catch (e : Exception) {
             } finally {
-                MainActivity.safeClose(this@DeviceConnection)
+                safeClose(this@DeviceConnection)
             }
         }).start()
     }
@@ -83,8 +92,8 @@ class DeviceConnection(var host : String, var port : Int, var listener: DeviceCo
         else
             closed = true
 
-        MainActivity.safeClose(shellStream)
-        MainActivity.safeClose(connection)
+        safeClose(shellStream)
+        safeClose(connection)
     }
 
 }

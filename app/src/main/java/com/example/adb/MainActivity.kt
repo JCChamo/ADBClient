@@ -1,5 +1,6 @@
 package com.example.adb
 
+import android.app.Service
 import android.content.Context
 import android.graphics.Color
 import android.net.ConnectivityManager
@@ -31,13 +32,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var commandList : ArrayList<String>
     private lateinit var adapter : ArrayAdapter<String>
     private lateinit var mProgressBar: ProgressBar
-    private var crypto: AdbCrypto? = null
-    //private var binder : ShellServiceBinder
-
-    val PUBLIC_KEY_NAME = "public.key"
-    val PRIVATE_KEY_NAME = "private.key"
+    private var binder = ShellService().ShellServiceBinder()
 
     companion object {
+        var crypto: AdbCrypto? = null
+
         fun safeClose(c: Closeable?): Boolean {
             if (c == null) return false
             try {
@@ -46,6 +45,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 return false
             }
             return true
+        }
+        val PUBLIC_KEY_NAME = "public.key"
+        val PRIVATE_KEY_NAME = "private.key"
+
+        fun readCryptoConfig(dataDir: File?): AdbCrypto? {
+            val pubKey = File(dataDir, PUBLIC_KEY_NAME)
+            val privKey = File(dataDir, PRIVATE_KEY_NAME)
+            var crypto: AdbCrypto? = null
+
+            if (pubKey.exists() && privKey.exists()) {
+                crypto = try {
+                    AdbCrypto.loadAdbKeyPair(AndroidBase64(), privKey, pubKey)
+                } catch (e: java.lang.Exception) {
+                    null
+                }
+            }
+            return crypto
         }
     }
 
@@ -106,7 +122,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     listDevicesButton.visibility = View.VISIBLE
 
                     crypto = readCryptoConfig(filesDir)
-                    setConnection()
+                    connectOrLookupConnection()
 
                 } else
                     Toast.makeText(applicationContext, "CONÉCTESE AL WIFI", Toast.LENGTH_SHORT)
@@ -140,23 +156,20 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         commandListView.post { commandListView.setSelection(commandListView.count - 1) }
     }
 
-    private fun setConnection(){
-
+    private fun startConnection() : DeviceConnection{
+        val conn = binder.createConnection(server.text.toString(), Integer.parseInt(port.text.toString()))
+        conn.startConnect()
+        return conn
     }
 
-    private fun readCryptoConfig(dataDir: File?): AdbCrypto? {
-        val pubKey = File(dataDir, PUBLIC_KEY_NAME)
-        val privKey = File(dataDir, PRIVATE_KEY_NAME)
-        var crypto: AdbCrypto? = null
+    private fun connectOrLookupConnection() : DeviceConnection {
+        var conn = binder.findConnection(server.text.toString(), Integer.parseInt(port.text.toString()))
+        if (conn == null)
+            conn = startConnection()
+        else
+            binder.addListener(conn, conn.listener)
 
-        if (pubKey.exists() && privKey.exists()) {
-            crypto = try {
-                AdbCrypto.loadAdbKeyPair(AndroidBase64(), privKey, pubKey)
-            } catch (e: java.lang.Exception) {
-                null
-            }
-        }
-        return crypto
+        return conn
     }
 
 }
