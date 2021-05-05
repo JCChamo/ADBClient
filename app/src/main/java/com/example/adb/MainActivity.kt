@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -156,20 +157,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         commandListView.post { commandListView.setSelection(commandListView.count - 1) }
     }
 
-    private fun startConnection() : DeviceConnection{
-        val conn = binder.createConnection(server.text.toString(), Integer.parseInt(port.text.toString()))
-        conn.startConnect()
-        return conn
-    }
-
-    private fun connectOrLookupConnection() : DeviceConnection {
-        var conn = binder.findConnection(server.text.toString(), Integer.parseInt(port.text.toString()))
-        if (conn == null)
-            conn = startConnection()
-        else
-            binder.addListener(conn, conn.listener)
-
-        return conn
+    private fun startConnection(){
     }
 
 }
