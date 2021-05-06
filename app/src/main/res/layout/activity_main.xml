@@ -91,7 +91,7 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/sendFileButton"
+        android:id="@+id/rebootButton"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -100,7 +100,7 @@
         android:layout_marginTop="10dp"
         android:textColor="#fff"
         android:elevation="5dp"
-        android:text="ENVIAR ARCHIVO"
+        android:text="REINICIAR BLACKBOARD"
         android:visibility="invisible"></Button>
 
     <Button
