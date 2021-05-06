@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun openStream() {
         try {
-            stream = connection.open("")
+            stream = connection.open(":shell")
         } catch (e : java.lang.Exception) {
             e.printStackTrace()
         }
