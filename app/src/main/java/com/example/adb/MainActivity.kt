@@ -1,11 +1,13 @@
 package com.example.adb
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.Base64
@@ -21,6 +23,7 @@ import com.tananaev.adblib.AdbConnection
 import com.tananaev.adblib.AdbCrypto
 import com.tananaev.adblib.AdbStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
 import java.net.Socket
 
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var rebootButton: Button
     private lateinit var killButton: Button
     private lateinit var listDevicesButton: Button
+    private lateinit var pushApkButton: Button
     private lateinit var mWifi : NetworkInfo
     private lateinit var connManager : ConnectivityManager
     private lateinit var ip : EditText
@@ -57,6 +61,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         rebootButton = findViewById(R.id.rebootButton)
         killButton = findViewById(R.id.killButton)
         listDevicesButton = findViewById(R.id.listDevicesButton)
+        pushApkButton = findViewById(R.id.pushApkButton)
         ip = findViewById(R.id.server)
         port = findViewById(R.id.port)
         commandListView = findViewById(R.id.commandListView)
@@ -76,6 +81,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         rebootButton.setOnClickListener(this)
         killButton.setOnClickListener(this)
         listDevicesButton.setOnClickListener(this)
+        pushApkButton.setOnClickListener(this)
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED
@@ -92,6 +98,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, commandList)
         commandListView.adapter = adapter
 
+
+        val message = "adb devices"
+        val messageByteArray = message.toByteArray(Charsets.UTF_8)
+//        AdbProtocol.generateMessage()
 
     }
 
@@ -117,6 +127,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     rebootButton.visibility = View.VISIBLE
                     killButton.visibility = View.VISIBLE
                     listDevicesButton.visibility = View.VISIBLE
+                    pushApkButton.visibility = View.VISIBLE
                     startConnection()
                 } else
                     Toast.makeText(applicationContext, "CONÉCTESE AL WIFI", Toast.LENGTH_SHORT)
@@ -125,7 +136,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             R.id.rebootButton -> {
 //                addCommandToList("adb push patata.txt /sdcard/patata.txt")
                 addCommandToList("adb reboot")
-                sendCommand("reboot")
+                sendCommand("shell:","reboot")
             }
 
             R.id.killButton -> {
@@ -133,10 +144,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 disconnect()
             }
 
+            R.id.pushApkButton -> {
+                addCommandToList("adb push")
+                sendCommand("sync:", "", ByteArray(connection.maxData))
+            }
+
             R.id.listDevicesButton -> {
                 addCommandToList("adb devices")
 //                sendCommand("input keyevent POWER")
-                sendCommand("devices")
+                sendCommand("shell:", "devices")
 //                defaultValuesButton.visibility = View.VISIBLE
             }
         }
@@ -160,11 +176,52 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         adapter.notifyDataSetChanged()
     }
 
-    private fun sendCommand(command: String) {
+    private fun sendCommand(destination: String, command: String = "", byteArray: ByteArray? = null) {
         Thread(Runnable {
-            openStream()
+            openStream(destination)
             try {
-                stream.write(command + '\n')
+                if (byteArray == null)
+                    stream.write(command + '\n')
+                else {
+                    Log.d(":::", "Dentro del else")
+                    val length = ("data/local/tmp/prueba.apk" + ",33206").length
+                    stream.write(ByteUtils.concat("SEND".toByteArray(), ByteUtils.intToByteArray(length)))
+                    stream.write("data/local/tmp/prueba.apk".toByteArray())
+                    stream.write(",33206".toByteArray())
+
+                    val absolutePath = getExternalFilesDir(null)
+                    val inputStream = FileInputStream("$absolutePath/prueba.apk")
+                    Log.d(":::", "FileInputStream inicializado")
+//                    stream.write(byteArray)
+
+                    while (true) {
+                        Log.d(":::", "Dentro del while")
+                        val read = inputStream.read(byteArray)
+                        if (read < 0) {
+                            Log.d(":::", "Read < 0")
+                            break
+                        }
+                        Log.d(":::", "READ: $read")
+                        stream.write(ByteUtils.concat("DATA".toByteArray(), ByteUtils.intToByteArray(read)))
+                        if (read == byteArray.size) {
+                            Log.d(":::", "BYTEARRAY.SIZE: ${byteArray.size}")
+                            stream.write(byteArray)
+                        } else {
+                            val tmp = ByteArray(read)
+                            Log.d(":::", "TEMP: $tmp")
+                            System.arraycopy(byteArray, 0, tmp, 0, read)
+                            stream.write(tmp)
+                        }
+                    }
+                    Log.d(":::", "Fuera del while")
+                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
+                    Log.d(":::", "HECHO")
+                    val res = stream.read()
+                    Log.d(":::", "RES: $res")
+                    stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
+                    Log.d(":::", "SALIR")
+                }
+
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -173,9 +230,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }).start()
     }
 
-    private fun openStream() {
+    private fun openStream(destination : String) {
         try {
-            stream = connection.open(":shell")
+            stream = connection.open(destination)
         } catch (e : java.lang.Exception) {
             e.printStackTrace()
         }

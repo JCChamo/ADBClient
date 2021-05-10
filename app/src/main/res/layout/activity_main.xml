@@ -129,4 +129,17 @@
         android:text="DESCONECTAR"
         android:visibility="invisible"></Button>
 
+    <Button
+        android:id="@+id/pushApkButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="10dp"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:text="ENVIAR APK"
+        android:visibility="invisible"></Button>
+
 </LinearLayout>
