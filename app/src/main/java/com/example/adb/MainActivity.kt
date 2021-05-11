@@ -24,11 +24,12 @@ import com.tananaev.adblib.AdbBase64
 import com.tananaev.adblib.AdbConnection
 import com.tananaev.adblib.AdbCrypto
 import com.tananaev.adblib.AdbStream
+import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.Socket
-import java.security.AccessController.getContext
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -156,11 +157,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.pushApkButton -> {
-//                openFileExplorer()
-//                Handler().postDelayed({
+                openFileExplorer()
+                Handler().postDelayed({
                     addCommandToList("adb push")
                     sendCommand("sync:", "", ByteArray(connection.maxData))
-//                }, 9000)
+                }, 9000)
                 installApkButton.isClickable = true
             }
 
@@ -199,7 +200,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     stream.write(command + '\n')
                 else {
                     Log.d(":::", "Dentro del else")
-                    remotePath = "data/local/tmp/prueba.apk"
+//                    remotePath = "data/local/tmp/prueba.apk"
+                    remotePath = "data/local/tmp/$fileName"
                     val mode = ",33206"
                     val length = ("$remotePath$mode").length
 
@@ -208,7 +210,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     stream.write(mode.toByteArray())
 
                     val absolutePath = getExternalFilesDir(null)
-                    val inputStream = FileInputStream("$absolutePath/prueba.apk")
+                    val inputStream = FileInputStream(file.path)
                     Log.d(":::", "FileInputStream inicializado")
 //                    stream.write(byteArray)
 
@@ -235,6 +237,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
                     Log.d(":::", "HECHO")
                     val res = stream.read()
+                    file.delete()
                     Log.d(":::", "RES: $res")
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
@@ -341,13 +344,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1001) {
             uri = data?.data
-//            file = uri!!
             fileName = getFileName(applicationContext.contentResolver, uri!!)!!
+            file = createTempFile(fileName.split(".")[0], ".${fileName.split(".")[1]}")
             path = uri!!.path!!
+            val stream = contentResolver.openInputStream(uri!!)
+            IOUtils.copy(stream, FileOutputStream(file))
             Log.d(":::PATH", path)
             Log.d(":::NAME", fileName)
-            file = createTempFile(fileName.split(".")[0], ".${fileName.split(".")[1]}")
-            Log.d(":::FILE", file.toString())
         }
     }
 
