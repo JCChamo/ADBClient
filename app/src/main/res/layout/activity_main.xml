@@ -150,4 +150,16 @@
             android:layout_marginLeft="5dp"></Button>
     </LinearLayout>
 
+    <Button
+        android:id="@+id/pullApkButton"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/teal_700"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="10dp"
+        android:textColor="#fff"
+        android:elevation="5dp"
+        android:text="RECIBIR FICHERO"
+        android:visibility="invisible"></Button>
 </LinearLayout>

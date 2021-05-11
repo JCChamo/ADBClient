@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var killButton: Button
     private lateinit var pushApkButton: Button
     private lateinit var installApkButton: Button
+    private lateinit var pullApkButton: Button
     private lateinit var mWifi : NetworkInfo
     private lateinit var connManager : ConnectivityManager
     private lateinit var ip : EditText
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         killButton = findViewById(R.id.killButton)
         pushApkButton = findViewById(R.id.pushApkButton)
         installApkButton = findViewById(R.id.installApkButton)
+        pullApkButton = findViewById(R.id.pullApkButton)
         ip = findViewById(R.id.server)
         port = findViewById(R.id.port)
         commandListView = findViewById(R.id.commandListView)
@@ -92,6 +94,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         killButton.setOnClickListener(this)
         pushApkButton.setOnClickListener(this)
         installApkButton.setOnClickListener(this)
+        pullApkButton.setOnClickListener(this)
         installApkButton.isClickable = false
 
 
@@ -140,6 +143,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     killButton.visibility = View.VISIBLE
                     pushApkButton.visibility = View.VISIBLE
                     installApkButton.visibility = View.VISIBLE
+                    pullApkButton.visibility = View.VISIBLE
                     startConnection()
                 } else
                     Toast.makeText(applicationContext, "CONÉCTESE AL WIFI", Toast.LENGTH_SHORT)
@@ -162,6 +166,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     addCommandToList("adb push")
                     sendCommand("sync:", "", ByteArray(connection.maxData))
                 }, 9000)
+                installApkButton.isClickable = true
+            }
+
+            R.id.pullApkButton -> {
+                addCommandToList("adb pull")
+                sendCommand("sync:", "", ByteArray(connection.maxData))
                 installApkButton.isClickable = true
             }
 
@@ -198,7 +208,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(":::", "Instalando")
                 else if (byteArray == null)
                     stream.write(command + '\n')
-                else {
+                else if (commandList[commandList.size - 1] == "adb push"){
                     Log.d(":::", "Dentro del else")
 //                    remotePath = "data/local/tmp/prueba.apk"
                     remotePath = "data/local/tmp/$fileName"
@@ -209,7 +219,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     stream.write(remotePath.toByteArray())
                     stream.write(mode.toByteArray())
 
-                    val absolutePath = getExternalFilesDir(null)
                     val inputStream = FileInputStream(file.path)
                     Log.d(":::", "FileInputStream inicializado")
 //                    stream.write(byteArray)
@@ -241,6 +250,50 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(":::", "RES: $res")
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
+                }
+
+                else if (commandList[commandList.size - 1] == "adb pull"){
+                    val localFile = "data/local/tmp/IMG-20210511-WA0001.jpg"
+                    val absolutePath = getExternalFilesDir(null)
+                    val remoteFile = "$absolutePath/imagen.jpg"
+
+                    val mode = ",33206"
+                    val length = ("$remoteFile$mode").length
+
+                    stream.write(ByteUtils.concat("RECV".toByteArray(), ByteUtils.intToByteArray(length)))
+                    stream.write(remoteFile.toByteArray())
+                    stream.write(mode.toByteArray())
+
+                    val inputStream = FileInputStream(localFile)
+                    Log.d(":::", "FileInputStream inicializado")
+
+                    while (true) {
+                        Log.d(":::", "Dentro del while")
+                        val read = inputStream.read(byteArray)
+                        if (read < 0) {
+                            Log.d(":::", "Read < 0")
+                            break
+                        }
+                        Log.d(":::", "READ: $read")
+                        stream.write(ByteUtils.concat("DATA".toByteArray(), ByteUtils.intToByteArray(read)))
+                        if (read == byteArray.size) {
+                            Log.d(":::", "BYTEARRAY.SIZE: ${byteArray.size}")
+                            stream.write(byteArray)
+                        } else {
+                            val tmp = ByteArray(read)
+                            Log.d(":::", "TEMP: $tmp")
+                            System.arraycopy(byteArray, 0, tmp, 0, read)
+                            stream.write(tmp)
+                        }
+                    }
+                    Log.d(":::", "Fuera del while")
+                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
+                    Log.d(":::", "HECHO")
+                    val res = stream.read()
+                    Log.d(":::", "RES: $res")
+                    stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
+                    Log.d(":::", "SALIR")
+
                 }
 
             } catch (e: IOException) {
@@ -346,6 +399,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             uri = data?.data
             fileName = getFileName(applicationContext.contentResolver, uri!!)!!
             file = createTempFile(fileName.split(".")[0], ".${fileName.split(".")[1]}")
+            Log.d(":::TEMP PATH", file.path)
             path = uri!!.path!!
             val stream = contentResolver.openInputStream(uri!!)
             IOUtils.copy(stream, FileOutputStream(file))
