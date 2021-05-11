@@ -1,8 +1,9 @@
 package com.example.adb
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.ConnectivityManager
@@ -10,6 +11,7 @@ import android.net.NetworkInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Base64.encodeToString
 import android.util.Log
@@ -26,6 +28,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.Socket
+import java.security.AccessController.getContext
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -34,8 +37,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var connectButton: Button
     private lateinit var rebootButton: Button
     private lateinit var killButton: Button
-    private lateinit var listDevicesButton: Button
     private lateinit var pushApkButton: Button
+    private lateinit var installApkButton: Button
     private lateinit var mWifi : NetworkInfo
     private lateinit var connManager : ConnectivityManager
     private lateinit var ip : EditText
@@ -52,6 +55,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var socket: Socket
     private lateinit var crypto: AdbCrypto
 
+    private var uri : Uri? = null
+    private lateinit var file : File
+    private lateinit var path : String
+    private lateinit var remotePath : String
+    private lateinit var fileName : String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -60,8 +69,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         connectButton = findViewById(R.id.connectButton)
         rebootButton = findViewById(R.id.rebootButton)
         killButton = findViewById(R.id.killButton)
-        listDevicesButton = findViewById(R.id.listDevicesButton)
         pushApkButton = findViewById(R.id.pushApkButton)
+        installApkButton = findViewById(R.id.installApkButton)
         ip = findViewById(R.id.server)
         port = findViewById(R.id.port)
         commandListView = findViewById(R.id.commandListView)
@@ -80,8 +89,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         connectButton.setOnClickListener(this)
         rebootButton.setOnClickListener(this)
         killButton.setOnClickListener(this)
-        listDevicesButton.setOnClickListener(this)
         pushApkButton.setOnClickListener(this)
+        installApkButton.setOnClickListener(this)
+        installApkButton.isClickable = false
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED
@@ -126,8 +137,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     addCommandToList("adb connect ${ip.text}")
                     rebootButton.visibility = View.VISIBLE
                     killButton.visibility = View.VISIBLE
-                    listDevicesButton.visibility = View.VISIBLE
                     pushApkButton.visibility = View.VISIBLE
+                    installApkButton.visibility = View.VISIBLE
                     startConnection()
                 } else
                     Toast.makeText(applicationContext, "CONÉCTESE AL WIFI", Toast.LENGTH_SHORT)
@@ -145,15 +156,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.pushApkButton -> {
-                addCommandToList("adb push")
-                sendCommand("sync:", "", ByteArray(connection.maxData))
+//                openFileExplorer()
+//                Handler().postDelayed({
+                    addCommandToList("adb push")
+                    sendCommand("sync:", "", ByteArray(connection.maxData))
+//                }, 9000)
+                installApkButton.isClickable = true
             }
 
-            R.id.listDevicesButton -> {
-                addCommandToList("adb devices")
-//                sendCommand("input keyevent POWER")
-                sendCommand("shell:", "devices")
-//                defaultValuesButton.visibility = View.VISIBLE
+            R.id.installApkButton -> {
+                addCommandToList("adb install")
+                sendCommand("shell:pm install -r $remotePath", "")
             }
         }
     }
@@ -180,14 +193,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         Thread(Runnable {
             openStream(destination)
             try {
-                if (byteArray == null)
+                if (command.contains("install"))
+                    Log.d(":::", "Instalando")
+                else if (byteArray == null)
                     stream.write(command + '\n')
                 else {
                     Log.d(":::", "Dentro del else")
-                    val length = ("data/local/tmp/prueba.apk" + ",33206").length
+                    remotePath = "data/local/tmp/prueba.apk"
+                    val mode = ",33206"
+                    val length = ("$remotePath$mode").length
+
                     stream.write(ByteUtils.concat("SEND".toByteArray(), ByteUtils.intToByteArray(length)))
-                    stream.write("data/local/tmp/prueba.apk".toByteArray())
-                    stream.write(",33206".toByteArray())
+                    stream.write(remotePath.toByteArray())
+                    stream.write(mode.toByteArray())
 
                     val absolutePath = getExternalFilesDir(null)
                     val inputStream = FileInputStream("$absolutePath/prueba.apk")
@@ -310,6 +328,36 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         override fun encodeToString(data: ByteArray): String {
             return encodeToString(data, Base64.NO_WRAP)
         }
+    }
+
+    private fun openFileExplorer() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.type = "*/*"
+        startActivityForResult(intent, 1001)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1001) {
+            uri = data?.data
+//            file = uri!!
+            fileName = getFileName(applicationContext.contentResolver, uri!!)!!
+            path = uri!!.path!!
+            Log.d(":::PATH", path)
+            Log.d(":::NAME", fileName)
+            file = createTempFile(fileName.split(".")[0], ".${fileName.split(".")[1]}")
+            Log.d(":::FILE", file.toString())
+        }
+    }
+
+    private fun getFileName(resolver: ContentResolver, uri: Uri): String? {
+        val returnCursor = resolver.query(uri, null, null, null, null)!!
+        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        returnCursor.moveToFirst()
+        val name = returnCursor.getString(nameIndex)
+        returnCursor.close()
+        return name
     }
 
 }
