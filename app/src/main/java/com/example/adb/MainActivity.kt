@@ -209,6 +209,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 else if (byteArray == null)
                     stream.write(command + '\n')
                 else if (commandList[commandList.size - 1] == "adb push"){
+
                     Log.d(":::", "Dentro del else")
 //                    remotePath = "data/local/tmp/prueba.apk"
                     remotePath = "data/local/tmp/$fileName"
@@ -262,7 +263,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     stream.write(remoteFile.toByteArray())
 
                     val outputStream = FileOutputStream(localFile)
-                    val inputStream = FileInputStream(remoteFile)
                     Log.d(":::", "FileOutputStream inicializado")
 
 
@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 //                        }
 //                    }
                     Log.d(":::", "Fuera del while")
-                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
+//                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
                     Log.d(":::", "HECHO")
                     val res = stream.read()
                     Log.d(":::", "RES: $res")
