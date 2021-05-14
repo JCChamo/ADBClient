@@ -29,7 +29,7 @@ public class AdbProtocol {
     /**
      * The maximum data payload supported by the ADB implementation
      */
-    public static final int CONNECT_MAXDATA = 4096;
+    public static final int CONNECT_MAXDATA = 65_536;
 
     /**
      * The payload sent with the connect message

@@ -253,39 +253,40 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 else if (commandList[commandList.size - 1] == "adb pull"){
-                    val localFile = "data/local/tmp/IMG-20210511-WA0001.jpg"
+
+                    val remoteFile = "data/local/tmp/IMG-20210511-WA0001.jpg"
                     val absolutePath = getExternalFilesDir(null)
-                    val remoteFile = "$absolutePath/imagen.jpg"
+                    val localFile = "$absolutePath/imagen.jpg"
 
-                    val mode = ",33206"
-                    val length = ("$remoteFile$mode").length
-
-                    stream.write(ByteUtils.concat("RECV".toByteArray(), ByteUtils.intToByteArray(length)))
+                    stream.write("RECV".toByteArray())
                     stream.write(remoteFile.toByteArray())
-                    stream.write(mode.toByteArray())
 
-                    val inputStream = FileInputStream(localFile)
-                    Log.d(":::", "FileInputStream inicializado")
+                    val outputStream = FileOutputStream(localFile)
+                    val inputStream = FileInputStream(remoteFile)
+                    Log.d(":::", "FileOutputStream inicializado")
 
-                    while (true) {
-                        Log.d(":::", "Dentro del while")
-                        val read = inputStream.read(byteArray)
-                        if (read < 0) {
-                            Log.d(":::", "Read < 0")
-                            break
-                        }
-                        Log.d(":::", "READ: $read")
-                        stream.write(ByteUtils.concat("DATA".toByteArray(), ByteUtils.intToByteArray(read)))
-                        if (read == byteArray.size) {
-                            Log.d(":::", "BYTEARRAY.SIZE: ${byteArray.size}")
-                            stream.write(byteArray)
-                        } else {
-                            val tmp = ByteArray(read)
-                            Log.d(":::", "TEMP: $tmp")
-                            System.arraycopy(byteArray, 0, tmp, 0, read)
-                            stream.write(tmp)
-                        }
-                    }
+
+//                    while (true) {
+//                        Log.d(":::", "Dentro del while")
+//                        val write = outputStream.write(byteArray)
+//                        // while ({bytesRead = input.read(bytesWrite); bytesRead}() != 1) {
+//                        if (write(byteArray) > 0) {
+//                            Log.d(":::", "Read < 0")
+//                            break
+//                        }
+//                        Log.d(":::", "READ: $write")
+//                        stream.write("OKAY".toByteArray())
+//
+//                        if (write == byteArray.size) {
+//                            Log.d(":::", "BYTEARRAY.SIZE: ${byteArray.size}")
+//                            stream.write(byteArray)
+//                        } else {
+//                            val tmp = ByteArray(write)
+//                            Log.d(":::", "TEMP: $tmp")
+//                            System.arraycopy(byteArray, 0, tmp, 0, write)
+//                            stream.write(tmp)
+//                        }
+//                    }
                     Log.d(":::", "Fuera del while")
                     stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
                     Log.d(":::", "HECHO")
@@ -293,7 +294,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(":::", "RES: $res")
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
-
                 }
 
             } catch (e: IOException) {
