@@ -20,10 +20,10 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.tananaev.adblib.AdbBase64
-import com.tananaev.adblib.AdbConnection
-import com.tananaev.adblib.AdbCrypto
-import com.tananaev.adblib.AdbStream
+import com.example.adb.lib.AdbBase64
+import com.example.adb.lib.AdbConnection
+import com.example.adb.lib.AdbCrypto
+import com.example.adb.lib.AdbStream
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.FileInputStream
