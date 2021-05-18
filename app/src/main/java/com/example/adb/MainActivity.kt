@@ -11,6 +11,7 @@ import android.net.NetworkInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Base64.encodeToString
@@ -30,6 +31,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.Socket
+import java.nio.charset.StandardCharsets
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -254,12 +256,18 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 else if (commandList[commandList.size - 1] == "adb pull"){
+                    val remoteFile = "data/local/tmp/app.apk"
+//                    val localFile = "storage/emulated/0/app.apk"
+                    val localFile = "/storage/emulated/0/Android/data/com.example.adb/files/app.apk"
 
-                    val remoteFile = "data/local/tmp/IMG-20210511-WA0001.jpg"
-                    val absolutePath = getExternalFilesDir(null)
-                    val localFile = "$absolutePath/imagen.jpg"
 
+
+                    stream.write(remoteFile.toByteArray())
+                    var res = stream.read()
+                    Log.d(":::", "RES1: ${String(res, StandardCharsets.UTF_8).trim()}")
                     stream.write("RECV".toByteArray())
+                    res = stream.read()
+                    Log.d(":::", "RES2: ${String(res, StandardCharsets.UTF_8).trim()}")
                     stream.write(remoteFile.toByteArray())
 
                     val outputStream = FileOutputStream(localFile)
@@ -290,8 +298,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(":::", "Fuera del while")
 //                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
                     Log.d(":::", "HECHO")
-                    val res = stream.read()
-                    Log.d(":::", "RES: $res")
+                    res = stream.read()
+                    Log.d(":::", "RES3: ${String(res, StandardCharsets.UTF_8).trim()}")
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
                 }
@@ -317,14 +325,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         try {
             val responseBytes = stream.read()
             runOnUiThread{
-                addCommandToList(String(responseBytes, charset("UTF-8")))
+                if (responseBytes != null)
+                    addCommandToList(String(responseBytes, StandardCharsets.UTF_8).trim { it <= ' ' })
+                else
+                    addCommandToList("Respuesta nula")
             }
         } catch (e : Exception) {
             e.printStackTrace()
         }
         Log.d(":::", "Respuesta recibida")
-//        stream.close()
-//        Log.d(":::", "Flujo cerrado")
     }
 
     private fun disconnect(){
