@@ -1,6 +1,7 @@
 package com.example.adb
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -11,7 +12,6 @@ import android.net.NetworkInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Base64.encodeToString
@@ -130,7 +130,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.defaultValuesButton -> {
-                ip.setText("172.20.255.31")
+//                ip.setText("172.20.255.31")
+                ip.setText("192.168.1.91")
                 port.setText("5555")
                 connectButton.visibility = View.VISIBLE
             }
@@ -202,6 +203,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         adapter.notifyDataSetChanged()
     }
 
+    @SuppressLint("SdCardPath")
     private fun sendCommand(destination: String, command: String = "", byteArray: ByteArray? = null) {
         Thread(Runnable {
             openStream(destination)
@@ -256,50 +258,33 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 else if (commandList[commandList.size - 1] == "adb pull"){
-                    val remoteFile = "data/local/tmp/app.apk"
-//                    val localFile = "storage/emulated/0/app.apk"
-                    val localFile = "/storage/emulated/0/Android/data/com.example.adb/files/app.apk"
+                    val remoteFile = "/data/local/tmp/prueba_petroprix.jpg"
+                    val localFile = "/sdcard/Android/data/com.example.pruebastream/files/patatas.jpg"
 
-
-
-                    stream.write(remoteFile.toByteArray())
-                    var res = stream.read()
-                    Log.d(":::", "RES1: ${String(res, StandardCharsets.UTF_8).trim()}")
+//                    stream.write(remoteFile.toByteArray())
                     stream.write("RECV".toByteArray())
-                    res = stream.read()
-                    Log.d(":::", "RES2: ${String(res, StandardCharsets.UTF_8).trim()}")
+                    stream.write(ByteUtils.intToByteArray(remoteFile.length))
                     stream.write(remoteFile.toByteArray())
 
                     val outputStream = FileOutputStream(localFile)
                     Log.d(":::", "FileOutputStream inicializado")
 
-
-//                    while (true) {
-//                        Log.d(":::", "Dentro del while")
-//                        val write = outputStream.write(byteArray)
-//                        // while ({bytesRead = input.read(bytesWrite); bytesRead}() != 1) {
-//                        if (write(byteArray) > 0) {
-//                            Log.d(":::", "Read < 0")
-//                            break
-//                        }
-//                        Log.d(":::", "READ: $write")
-//                        stream.write("OKAY".toByteArray())
-//
-//                        if (write == byteArray.size) {
-//                            Log.d(":::", "BYTEARRAY.SIZE: ${byteArray.size}")
-//                            stream.write(byteArray)
-//                        } else {
-//                            val tmp = ByteArray(write)
-//                            Log.d(":::", "TEMP: $tmp")
-//                            System.arraycopy(byteArray, 0, tmp, 0, write)
-//                            stream.write(tmp)
-//                        }
-//                    }
-                    Log.d(":::", "Fuera del while")
-//                    stream.write(ByteUtils.concat("DONE".toByteArray(), ByteUtils.intToByteArray(System.currentTimeMillis().toInt())))
-                    Log.d(":::", "HECHO")
-                    res = stream.read()
-                    Log.d(":::", "RES3: ${String(res, StandardCharsets.UTF_8).trim()}")
+                    while (true) {
+                        Log.d(":::", "Dentro del while")
+                        val read = stream.read()
+                        if (read.size < 0) {
+                            Log.d(":::", "Read < 0")
+                            break
+                        }
+                        if (read.size == byteArray.size) {
+                            Log.d(":::", "BYTEARRAY.SIZE: ${read.size}")
+                            outputStream.write(read)
+                        } else {
+                            val tmp = ByteArray(read.size)
+                            System.arraycopy(byteArray, 0, tmp, 0, read.size)
+                            outputStream.write(tmp)
+                        }
+                    }
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
                 }
@@ -308,7 +293,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 e.printStackTrace()
             }
             Log.d(":::", "Comando enviado")
-            getResponse()
         }).start()
     }
 
@@ -326,7 +310,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             val responseBytes = stream.read()
             runOnUiThread{
                 if (responseBytes != null)
-                    addCommandToList(String(responseBytes, StandardCharsets.UTF_8).trim { it <= ' ' })
+                    addCommandToList(String(responseBytes, StandardCharsets.UTF_8))
                 else
                     addCommandToList("Respuesta nula")
             }
