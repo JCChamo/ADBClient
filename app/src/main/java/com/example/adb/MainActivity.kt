@@ -32,6 +32,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.Socket
 import java.nio.charset.StandardCharsets
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -131,7 +133,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         when (v?.id) {
             R.id.defaultValuesButton -> {
 //                ip.setText("172.20.255.31")
-                ip.setText("192.168.1.91")
+//                ip.setText("192.168.1.91")
+                ip.setText("192.168.1.184")
                 port.setText("5555")
                 connectButton.visibility = View.VISIBLE
             }
@@ -258,8 +261,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 else if (commandList[commandList.size - 1] == "adb pull"){
-                    val remoteFile = "/data/local/tmp/prueba_petroprix.jpg"
-                    val localFile = "/sdcard/Android/data/com.example.pruebastream/files/patatas.jpg"
+                    val remoteFile = "/data/local/tmp/imagen.PNG"
+//                    val remoteFile = "/data/local/tmp/prueba_petroprix.jpg"
+                    val localFile = "/sdcard/Android/data/com.example.pruebastream/files/imagen.PNG"
 
 //                    stream.write(remoteFile.toByteArray())
                     stream.write("RECV".toByteArray())
@@ -270,21 +274,42 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(":::", "FileOutputStream inicializado")
 
                     while (true) {
-                        Log.d(":::", "Dentro del while")
-                        val read = stream.read()
-                        if (read.size < 0) {
-                            Log.d(":::", "Read < 0")
+                        var read = stream.read()
+
+                        var readString = String(read, StandardCharsets.UTF_8)
+                        Log.d(":::ORIGINAL", readString)
+                        if (readString.contains("DATA")) {
+                            readString = readString.replace("DATA", "")
+                            Log.d(":::SIN DATA", readString)
+                        }
+
+                        if (readString.contains("DONE")) {
+                            readString = readString.replace("DONE", "")
+                            Log.d(":::SIN DONE", readString)
+                            outputStream.write(readString.toByteArray())
+                            stream.write("OKAY".toByteArray())
                             break
                         }
-                        if (read.size == byteArray.size) {
-                            Log.d(":::", "BYTEARRAY.SIZE: ${read.size}")
-                            outputStream.write(read)
-                        } else {
-                            val tmp = ByteArray(read.size)
-                            System.arraycopy(byteArray, 0, tmp, 0, read.size)
-                            outputStream.write(tmp)
-                        }
+                        Log.d(":::LIMPIA", readString)
+                        outputStream.write(readString.toByteArray())
+                        stream.write("OKAY".toByteArray())
                     }
+//                    while (true) {
+//                        Log.d(":::", "Dentro del while")
+//                        val read = stream.read()
+//                        if (read.size < 0) {
+//                            Log.d(":::", "Read < 0")
+//                            break
+//                        }
+//                        if (read.size == byteArray.size) {
+//                            Log.d(":::", "BYTEARRAY.SIZE: ${read.size}")
+//                            outputStream.write(read)
+//                        } else {
+//                            val tmp = ByteArray(read.size)
+//                            System.arraycopy(byteArray, 0, tmp, 0, read.size)
+//                            outputStream.write(tmp)
+//                        }
+//                    }
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
                 }
