@@ -261,9 +261,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 else if (commandList[commandList.size - 1] == "adb pull"){
-                    val remoteFile = "/data/local/tmp/imagen.PNG"
-//                    val remoteFile = "/data/local/tmp/prueba_petroprix.jpg"
-                    val localFile = "/sdcard/Android/data/com.example.pruebastream/files/imagen.PNG"
+                    val remoteFile = "/data/local/tmp/world.sql"
+//                    val remoteFile = "/data/local/tmp/prueba_petroprix.jpg"app.apk
+                    val localFile = "/sdcard/Android/data/com.example.pruebastream/files/world.sql"
 
 //                    stream.write(remoteFile.toByteArray())
                     stream.write("RECV".toByteArray())
@@ -273,46 +273,34 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     val outputStream = FileOutputStream(localFile)
                     Log.d(":::", "FileOutputStream inicializado")
 
-                    while (true) {
+                    while (!stream.isQueueEmpty) {
                         var read = stream.read()
 
                         var readString = String(read, StandardCharsets.UTF_8)
                         Log.d(":::ORIGINAL", readString)
                         if (readString.contains("DATA")) {
-                            readString = readString.replace("DATA", "")
+                            read = read.copyOfRange(8, read.size)
+//                            readString = readString.substring(8, readString.length)
+                            readString = String(read, StandardCharsets.UTF_8)
                             Log.d(":::SIN DATA", readString)
                         }
 
                         if (readString.contains("DONE")) {
-                            readString = readString.replace("DONE", "")
+                            read = read.copyOfRange(0, read.size - 16)
+//                            readString = readString.substring(0, readString.length - 8)
+                            readString = String(read, StandardCharsets.UTF_8)
                             Log.d(":::SIN DONE", readString)
-                            outputStream.write(readString.toByteArray())
-                            stream.write("OKAY".toByteArray())
-                            break
+//                            stream.write("OKAY".toByteArray())
                         }
+                        outputStream.write(read)
+                        readString = String(read, StandardCharsets.UTF_8)
                         Log.d(":::LIMPIA", readString)
-                        outputStream.write(readString.toByteArray())
-                        stream.write("OKAY".toByteArray())
+//                        stream.write("OKAY".toByteArray())
                     }
-//                    while (true) {
-//                        Log.d(":::", "Dentro del while")
-//                        val read = stream.read()
-//                        if (read.size < 0) {
-//                            Log.d(":::", "Read < 0")
-//                            break
-//                        }
-//                        if (read.size == byteArray.size) {
-//                            Log.d(":::", "BYTEARRAY.SIZE: ${read.size}")
-//                            outputStream.write(read)
-//                        } else {
-//                            val tmp = ByteArray(read.size)
-//                            System.arraycopy(byteArray, 0, tmp, 0, read.size)
-//                            outputStream.write(tmp)
-//                        }
-//                    }
                     stream.write(ByteUtils.concat("QUIT".toByteArray(), ByteUtils.intToByteArray(0)))
                     Log.d(":::", "SALIR")
                 }
+                getResponse()
 
             } catch (e: IOException) {
                 e.printStackTrace()
